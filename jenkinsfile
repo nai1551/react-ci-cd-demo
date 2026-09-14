@@ -1,13 +1,10 @@
 pipeline {
     agent any
-    tools {
-        nodejs 'NodeJS 21.4.0'
-    }
     environment {
         GITHUB_TOKEN = credentials('github-token')
     }
     stages {
-        //list current file path and directory
+
         stage('List current directory') {
             steps {
                 sh 'pwd'
@@ -15,12 +12,19 @@ pipeline {
             }
         }
 
-        stage('Set up Node.js') {
+        stage('Verify Node.js') {
             steps {
-                nodejs(nodeJSInstallationName: 'NodeJS 21.4.0') {
-                    sh 'node --version'
-                    sh 'npm --version'
-                }
+                sh '''
+                    echo "===== NODE ====="
+                    node --version
+
+                    echo "===== NPM ====="
+                    npm --version
+
+                    echo "===== LOCATION ====="
+                    which node
+                    which npm
+                '''
             }
         }
 
@@ -65,7 +69,7 @@ pipeline {
                         git config --global user.email "shahaayush349@gmail.com"
                         git config --global user.name "Shah-Aayush"
                         git add .
-                        git diff-index --quiet HEAD || git commit -m "Jetkins CI: perform integration steps"
+                        git diff-index --quiet HEAD || git commit -m "Jenkins CI: perform integration steps"
                         git remote set-url origin https://$GITHUB_TOKEN:@github.com/Marwizz/react-ci-cd-demo.git
                         git push origin main
                     '''
@@ -75,7 +79,7 @@ pipeline {
 
         stage('Run tests') {
             steps {
-                sh 'npm test'
+                sh 'CI=true npm test -- --watchAll=false'
             }
         }
 
@@ -89,6 +93,18 @@ pipeline {
             steps {
                 sh 'rm -rf build'
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'React project CI pipeline completed successfully!'
+        }
+        failure {
+            echo 'React project CI pipeline failed!'
+        }
+        always {
+            echo 'Pipeline execution finished.'
         }
     }
 }
